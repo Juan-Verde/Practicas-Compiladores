@@ -5,11 +5,10 @@
 
 /*
  * Algoritmo 1 de la Practica 2: Move(T, a)
- * 
  * Regresa el conjunto de estados alcanzables desde T
  * consumiendo exactamente el simbolo 'a'.
  */
-static bool* move_operation(
+bool* move_operation(
     nfa n,
     bool *T,
     char a

@@ -53,7 +53,14 @@ typedef struct
 dfa nfa_to_dfa(nfa n);
 
 /*
- * Imprime la tabla de transiciones.
+ * Algoritmo 1 de la Practica 2: Move(T, a)
+ * Regresa el conjunto de estados alcanzables desde T
+ * consumiendo exactamente el simbolo 'a'.
+ */
+bool* move_operation(nfa n, bool *T, char a);
+
+/*
+ * Imprime la tabla de transiciones
  */
 void print_dfa_table(dfa d);
 
