@@ -71,6 +71,11 @@ void free_nfa(nfa *n);
  */
 void epsilon_closure(nfa n, bool *states);
 
+/*
+ * Imprime la tabla de transiciones del NFA en consola.
+ */
+void print_nfa_table(nfa n);
+
 
 /*
  * Guarda el NFA en un archivo.
@@ -79,8 +84,5 @@ bool save_nfa(
     const nfa *n,
     const char *path
 );
-
-
-
 
 #endif

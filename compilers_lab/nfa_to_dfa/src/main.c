@@ -16,30 +16,6 @@ void print_postfix(regex r)
 }
 
 /*
- * Función para imprimir el NFA y poder contrastarlo
- * con el DFA
- */
-void print_nfa_table(nfa n)
-{
-    printf("\n=== TABLA DE TRANSICIONES DEL NFA (INICIAL) ===\n");
-    for (int i = 0; i < n.transition_count; i++)
-    {
-        transition t = n.transitions[i];
-        if (t.epsilon)
-        {
-            printf("q%d -- epsilon --> q%d\n", t.from, t.to);
-        }
-        else
-        {
-            printf("q%d -- %c --> q%d\n", t.from, t.symbol, t.to);
-        }
-    }
-    printf("\nEstado inicial: q%d\n", n.start);
-    printf("Estado de aceptacion: q%d\n", n.accept);
-    printf("===============================================\n");
-}
-
-/*
  * Función orquestadora para la bandera -d
  * genera y muestra ambos autómatas.
  */
