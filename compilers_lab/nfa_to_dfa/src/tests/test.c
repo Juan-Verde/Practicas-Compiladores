@@ -120,6 +120,50 @@ void test_construccion_subconjuntos()
     free_nfa(&n);
 }
 
+
+/*
+ * Prueba adicional: NFA hardcodeado -> DFA
+ * Demuestra que nfa_to_dfa() recibe un NFA directamente,
+ * sin pasar necesariamente por la etapa de regex.
+ */
+void test_nfa_hardcoded_to_dfa()
+{
+    printf("\n--- PRUEBA ADICIONAL: NFA hardcodeado -> DFA ---\n");
+
+    /*
+     * NFA que reconoce cadenas sobre {a,b} que terminan en "ab".
+     * Estados: {0, 1, 2}. Inicial: 0. Final: 2.
+     * Transiciones:
+     *   0 --a--> 0, 1
+     *   0 --b--> 0
+     *   1 --b--> 2
+     */
+    nfa n;
+    n.state_count = 3;
+    n.start = 0;
+    n.accept = 2;
+    n.transition_capacity = 8;
+    n.transition_count = 4;
+    n.transitions = malloc(sizeof(transition) * n.transition_capacity);
+
+    n.transitions[0] = (transition){.from = 0, .to = 0, .symbol = 'a', .epsilon = false};
+    n.transitions[1] = (transition){.from = 0, .to = 1, .symbol = 'a', .epsilon = false};
+    n.transitions[2] = (transition){.from = 0, .to = 0, .symbol = 'b', .epsilon = false};
+    n.transitions[3] = (transition){.from = 1, .to = 2, .symbol = 'b', .epsilon = false};
+
+    printf("NFA de entrada (hardcodeado, sin regex):\n");
+    print_nfa_table(n);
+
+    // Llamada directa: nfa -> dfa
+    dfa d = nfa_to_dfa(n);
+
+    printf("DFA resultante:\n");
+    print_dfa_table(d);
+
+    free_dfa(&d);
+    free_nfa(&n);
+}
+
 /* Funcion principal que orquesta las pruebas al ejecutar test.c */
 int main()
 {
@@ -130,6 +174,7 @@ int main()
     test_epsilon_closure_manual();
     test_move_manual();
     test_construccion_subconjuntos();
+    test_nfa_hardcoded_to_dfa();
     
     printf("\n==========================================\n");
     printf(" PRUEBAS FINALIZADAS CON EXITO\n");

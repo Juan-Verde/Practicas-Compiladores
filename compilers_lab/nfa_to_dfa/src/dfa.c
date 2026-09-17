@@ -102,26 +102,81 @@ static void get_alphabet(nfa n, char *alphabet, int *alpha_size)
 }
 
 /*
+ * Asegura que haya capacidad en el arreglo de estados.
+ * Si se llena, duplica la memoria asignada dinamicamente con realloc.
+ * Si realloc falla, termina el programa para evitar corrupción de memoria.
+ */
+static void ensure_state_capacity(dfa *d)
+{
+    if (d->state_count >= d->state_capacity)
+    {
+        d->state_capacity *= 2;
+        dfa_state *new_states = realloc(d->states, sizeof(dfa_state) * d->state_capacity);
+        if (new_states == NULL)
+        {
+            fprintf(stderr, "Error: Desbordamiento de memoria en estados del DFA.\n");
+            exit(EXIT_FAILURE);
+        }
+        d->states = new_states;
+    }
+}
+
+/*
+ * Asegura que haya capacidad en el arreglo de transiciones.
+ * Si se llena, duplica la memoria asignada dinamicamente.
+ */
+static void ensure_transition_capacity(dfa *d)
+{
+    if (d->transition_count >= d->transition_capacity)
+    {
+        d->transition_capacity *= 2;
+        dfa_transition *new_trans = realloc(d->transitions, sizeof(dfa_transition) * d->transition_capacity);
+        if (new_trans == NULL)
+        {
+            fprintf(stderr, "Error: Desbordamiento de memoria en transiciones del DFA.\n");
+            exit(EXIT_FAILURE);
+        }
+        d->transitions = new_trans;
+    }
+}
+
+/*
  * Algoritmo 3 de la Practica 2: Construccion de Subconjuntos (NFA a DFA)
  */
 dfa nfa_to_dfa(nfa n)
 {
     dfa result;
-    // Inicializamos las capacidades
-    result.state_capacity = 128;
+    // Inicializamos las capacidades inicialmente pequenas con crecimiento dinamico
+    result.state_capacity = 16;
     result.states = malloc(sizeof(dfa_state) * result.state_capacity);
     result.state_count = 0;
 
-    result.transition_capacity = 256;
+    result.transition_capacity = 32;
     result.transitions = malloc(sizeof(dfa_transition) * result.transition_capacity);
     result.transition_count = 0;
 
+    // validacion de memoria inicial
+    if (result.states == NULL || result.transitions == NULL)
+    {
+        fprintf(stderr, "Error: no se pudo reservar memoria inicial para el DFA.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Obtenemos el alfabeto del NFA
     char alphabet[256];
     int alpha_size = 0;
     get_alphabet(n, alphabet, &alpha_size);
 
     // s0 <- e-closure({q0})
     bool *s0 = calloc(n.state_count, sizeof(bool));
+
+    // Validacion de memoria de s0
+    if (s0 == NULL)
+    {
+        fprintf(stderr, "Error: no se pudo reservar s0.\n");
+        exit(EXIT_FAILURE);
+    }
+
     s0[n.start] = true;
     epsilon_closure(n, s0);
 
@@ -165,7 +220,10 @@ dfa nfa_to_dfa(nfa n)
                 // if V no esta en Q_D 
                 if (V_id == -1)
                 {
-                    // Q_D <- Q_D U {V} y 12: encolar(Cola, V)
+                    // validamos memoria antes de agregar
+                    ensure_state_capacity(&result);
+
+                    // Q_D <- Q_D U {V} y encolar(Cola, V)
                     V_id = result.state_count;
                     
                     result.states[V_id].id = V_id;
@@ -176,9 +234,12 @@ dfa nfa_to_dfa(nfa n)
                 }
                 else
                 {
-                    //Si ya existia, liberamos la memoria calculada
+                    //Si ya existia, liberamos la memoria temporal
                     free(moved);
                 }
+
+                // validamos memoria antes de agregar
+                ensure_transition_capacity(&result);
 
                 // delta_D(U, a) <- V
                 result.transitions[result.transition_count].from = U_id;
@@ -193,7 +254,7 @@ dfa nfa_to_dfa(nfa n)
         }
     }
 
-    // for all S in Q_D
+    // for all S in Q_D marcamos estados de aceptacion
     for (int i = 0; i < result.state_count; i++)
     {
         // if S intersecta F_N != vacio
@@ -243,11 +304,24 @@ void print_dfa_table(dfa d)
  */
 void free_dfa(dfa *d)
 {
-    for(int i = 0; i < d->state_count; i++) {
-        free(d->states[i].nfa_states);
+    if (d == NULL) return;
+
+    if (d->states != NULL)
+    {
+        for (int i = 0; i < d->state_count; i++)
+        {
+            free(d->states[i].nfa_states);
+            d->states[i].nfa_states = NULL;
+        }
+        free(d->states);
     }
-    free(d->states);
+
     free(d->transitions);
+
+    d->states = NULL;
+    d->transitions = NULL;
     d->state_count = 0;
     d->transition_count = 0;
+    d->state_capacity = 0;
+    d->transition_capacity = 0;
 }
