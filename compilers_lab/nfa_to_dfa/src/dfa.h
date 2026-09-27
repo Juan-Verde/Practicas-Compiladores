@@ -69,4 +69,22 @@ void print_dfa_table(dfa d);
  */
 void free_dfa(dfa *d);
 
+/*
+ * Minimiza un DFA usando refinamiento de particiones.
+ * Internamente agrega un estado sumidero si el DFA está incompleto,
+ * elimina estados inalcanzables y fusiona estados equivalentes.
+ */
+dfa minimize_dfa(dfa d);
+
+/*
+ * Imprime la tabla de transiciones del DFA minimizado.
+ */
+void print_dfa_min(dfa d);
+
+/*
+ * Ejecuta una cadena sobre un DFA y regresa true si es aceptada.
+ * Se usa para la suite de pruebas de la Práctica 3.
+ */
+bool test_string(dfa d, const char *input);
+
 #endif

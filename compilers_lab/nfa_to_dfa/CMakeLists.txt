@@ -10,6 +10,7 @@ add_executable(nfa_to_dfa
     ./src/regex.c 
     ./src/nfa.c 
     ./src/dfa.c
+    ./src/min_dfa.c
 )
 
 # Compilar las pruebas
@@ -18,4 +19,5 @@ add_executable(test_nfa_to_dfa
     ./src/regex.c 
     ./src/nfa.c 
     ./src/dfa.c
+    ./src/min_dfa.c
 )

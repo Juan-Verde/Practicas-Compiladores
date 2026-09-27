@@ -1,21 +1,14 @@
 #include "../nfa.h"
 #include "../dfa.h"
+#include "../min_dfa.h"
 #include "../regex.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-/*
- * Prueba 2.2.1: Prueba del Algoritmo epsilon-Closure
- * Para comprobar recuperacion de estados y que no se caiga en bucles infinitos
- */
 void test_epsilon_closure_manual()
 {
     printf("\n--- PRUEBA 2.2.1: Algoritmo Epsilon-Closure ---\n");
 
-    /* 
-     * Vector de prueba: NFA con estados {0,1,2,3}. 
-     * Transiciones epsilon: 0->1, 1->2 y ciclo 2->1 
-     */
     nfa test_nfa;
     test_nfa.state_count = 4;
     test_nfa.transitions = malloc(sizeof(transition) * 3);
@@ -24,42 +17,26 @@ void test_epsilon_closure_manual()
 
     test_nfa.transitions[0] = (transition){.from = 0, .to = 1, .symbol = 0, .epsilon = true};
     test_nfa.transitions[1] = (transition){.from = 1, .to = 2, .symbol = 0, .epsilon = true};
-    test_nfa.transitions[2] = (transition){.from = 2, .to = 1, .symbol = 0, .epsilon = true}; // El ciclo
+    test_nfa.transitions[2] = (transition){.from = 2, .to = 1, .symbol = 0, .epsilon = true};
 
-    // Conjunto inicial T = {0}
     bool *T = calloc(test_nfa.state_count, sizeof(bool));
     T[0] = true;
 
-    // Ejecucion del algoritmo
     epsilon_closure(test_nfa, T);
 
-    // Validacion
-    printf("Vector de entrada: e-Closure({0})\n");
-    printf("Resultado esperado: { 0 1 2 }\n");
     printf("Resultado obtenido: { ");
     for (int i = 0; i < test_nfa.state_count; i++)
-    {
         if (T[i]) printf("%d ", i);
-    }
     printf("}\n");
-    printf("Conclusion: El algoritmo rompio la dependencia ciclica (2->1) con exito.\n");
 
     free(T);
     free(test_nfa.transitions);
 }
 
-/*
- * Prueba 2.2.2: Prueba del Algoritmo Move
- * Para verificar transiciones consumiendo estrictamente el simbolo dado.
- */
 void test_move_manual()
 {
     printf("\n--- PRUEBA 2.2.2: Algoritmo Move ---\n");
 
-    /* 
-     * Vector de prueba: Origen 0. 
-     * Transiciones: 0->1 (con 'a'), 0->2 (con 'a') y 0->3 (con 'b') 
-     */
     nfa test_nfa;
     test_nfa.state_count = 4;
     test_nfa.transitions = malloc(sizeof(transition) * 3);
@@ -68,43 +45,27 @@ void test_move_manual()
 
     test_nfa.transitions[0] = (transition){.from = 0, .to = 1, .symbol = 'a', .epsilon = false};
     test_nfa.transitions[1] = (transition){.from = 0, .to = 2, .symbol = 'a', .epsilon = false};
-    test_nfa.transitions[2] = (transition){.from = 0, .to = 3, .symbol = 'b', .epsilon = false}; // Simbolo ajeno
+    test_nfa.transitions[2] = (transition){.from = 0, .to = 3, .symbol = 'b', .epsilon = false};
 
-    // Conjunto de estados T = {0}
     bool *T = calloc(test_nfa.state_count, sizeof(bool));
     T[0] = true;
 
-    // Ejecucion del algoritmo: Move({0}, 'a')
     bool *R = move_operation(test_nfa, T, 'a');
 
-    // Validacion
-    printf("Vector de entrada: Move({0}, 'a')\n");
-    printf("Resultado esperado: { 1 2 }\n");
     printf("Resultado obtenido: { ");
     for (int i = 0; i < test_nfa.state_count; i++)
-    {
         if (R[i]) printf("%d ", i);
-    }
     printf("}\n");
-    printf("Conclusion: El algoritmo transito correctamente ignorando el simbolo 'b'.\n");
 
     free(T);
     free(R);
     free(test_nfa.transitions);
 }
 
-/*
- * Prueba 2.2.3: Prueba de Construccion de Subconjuntos
- * Para contrastar el automata inicial frente al resultado final.
- */
 void test_construccion_subconjuntos()
 {
     printf("\n--- PRUEBA 2.2.3: Construccion de Subconjuntos ---\n");
-    
-    /* 
-     * Utilizamos una regex para demostrar que se eliminan 
-     * las transiciones epsilon y las ambiguedades de Thompson.
-     */
+
     const char *regex_str = "(a|b)*a";
     printf("Expresion regular base: %s\n", regex_str);
 
@@ -112,32 +73,17 @@ void test_construccion_subconjuntos()
     nfa n = regex_to_nfa(r);
     dfa d = nfa_to_dfa(n);
 
-    //Contrastamos visualmente
-    print_nfa_table(n); 
+    print_nfa_table(n);
     print_dfa_table(d);
 
     free_dfa(&d);
     free_nfa(&n);
 }
 
-
-/*
- * Prueba adicional: NFA hardcodeado -> DFA
- * Demuestra que nfa_to_dfa() recibe un NFA directamente,
- * sin pasar necesariamente por la etapa de regex.
- */
 void test_nfa_hardcoded_to_dfa()
 {
     printf("\n--- PRUEBA ADICIONAL: NFA hardcodeado -> DFA ---\n");
 
-    /*
-     * NFA que reconoce cadenas sobre {a,b} que terminan en "ab".
-     * Estados: {0, 1, 2}. Inicial: 0. Final: 2.
-     * Transiciones:
-     *   0 --a--> 0, 1
-     *   0 --b--> 0
-     *   1 --b--> 2
-     */
     nfa n;
     n.state_count = 3;
     n.start = 0;
@@ -151,20 +97,115 @@ void test_nfa_hardcoded_to_dfa()
     n.transitions[2] = (transition){.from = 0, .to = 0, .symbol = 'b', .epsilon = false};
     n.transitions[3] = (transition){.from = 1, .to = 2, .symbol = 'b', .epsilon = false};
 
-    printf("NFA de entrada (hardcodeado, sin regex):\n");
     print_nfa_table(n);
-
-    // Llamada directa: nfa -> dfa
     dfa d = nfa_to_dfa(n);
-
-    printf("DFA resultante:\n");
     print_dfa_table(d);
 
     free_dfa(&d);
     free_nfa(&n);
 }
 
-/* Funcion principal que orquesta las pruebas al ejecutar test.c */
+/* ============================================================
+ * PRUEBAS DE MINIMIZACIÓN (Práctica 3)
+ * ============================================================ */
+
+static void run_test_suite(dfa dmin,
+                           const char **accept, const char **reject,
+                           int n_accept, int n_reject)
+{
+    int passed = 0;
+    int total = n_accept + n_reject;
+
+    printf("\n[Aceptacion]\n");
+    for (int i = 0; i < n_accept; i++)
+    {
+        bool res = test_string(dmin, accept[i]);
+        printf("  \"%s\" -> %s\n", accept[i], res ? "PASS" : "FAIL");
+        if (res) passed++;
+    }
+
+    printf("[Rechazo]\n");
+    for (int i = 0; i < n_reject; i++)
+    {
+        bool res = !test_string(dmin, reject[i]);
+        printf("  \"%s\" -> %s\n", reject[i], res ? "PASS" : "FAIL");
+        if (res) passed++;
+    }
+
+    printf("Resultado: %d/%d pruebas superadas.\n", passed, total);
+}
+
+static void test_minimizacion(const char *regex_str,
+                              const char **accept, const char **reject)
+{
+    printf("\n### Regex: %s\n", regex_str);
+
+    regex r = parse_regex(regex_str);
+    nfa n = regex_to_nfa(r);
+    dfa d = nfa_to_dfa(n);
+    dfa dmin = minimize_dfa(d);
+
+    print_dfa_table(d);
+    print_dfa_min(dmin);
+
+    printf("\nComparacion: |Q| = %d, |Q'| = %d\n",
+           d.state_count, dmin.state_count);
+
+    if (d.state_count >= dmin.state_count)
+        printf("OK: |Q| >= |Q'|\n");
+    else
+        printf("ERROR: la minimizacion aumento estados\n");
+
+    run_test_suite(dmin, accept, reject, 10, 10);
+
+    free_dfa(&dmin);
+    free_dfa(&d);
+    free_nfa(&n);
+}
+
+void test_minimizacion_3_regex()
+{
+    printf("\n==========================================\n");
+    printf(" PRUEBA 3: Minimizacion de DFA\n");
+    printf("==========================================\n");
+
+    /* ---------- Regex 1: (a|b)*abb ---------- */
+    const char *acc1[] = {
+        "abb", "aabb", "babb", "aababb", "bbabb",
+        "aaabb", "bababb", "bbababb", "abbabb", "baabb"
+    };
+    const char *rej1[] = {
+        "", "a", "b", "ab", "ba",
+        "aba", "bab", "bba", "aab", "bbb"
+    };
+    test_minimizacion("(a|b)*abb", acc1, rej1);
+
+    /* ---------- Regex 2: (0|1)*01(0|1)* ---------- */
+    const char *acc2[] = {
+        "01", "001", "010", "011", "101",
+        "0100", "0011", "1101", "01010", "10101"
+    };
+    const char *rej2[] = {
+        "", "0", "1", "00", "11",
+        "10", "000", "111", "100", "110"
+    };
+    test_minimizacion("(0|1)*01(0|1)*", acc2, rej2);
+
+    /* ---------- Regex 3: (a|b)*ab(a|b)* ---------- */
+    const char *acc3[] = {
+        "ab", "aab", "abb", "aba", "bab",
+        "aabb", "abab", "babb", "abba", "abbb"
+    };
+    const char *rej3[] = {
+        "", "a", "b", "aa", "bb",
+        "ba", "aaa", "bbb", "bba", "aaaa"
+    };
+    test_minimizacion("(a|b)*ab(a|b)*", acc3, rej3);
+}
+
+/* ============================================================
+ * main
+ * ============================================================ */
 int main()
 {
     printf("==========================================\n");
@@ -175,10 +216,11 @@ int main()
     test_move_manual();
     test_construccion_subconjuntos();
     test_nfa_hardcoded_to_dfa();
-    
+    test_minimizacion_3_regex();
+
     printf("\n==========================================\n");
     printf(" PRUEBAS FINALIZADAS CON EXITO\n");
     printf("==========================================\n");
-    
+
     return 0;
 }
