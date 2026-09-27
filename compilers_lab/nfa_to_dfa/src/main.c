@@ -1,6 +1,7 @@
 #include "regex.h"
 #include "nfa.h"
 #include "dfa.h"
+#include "min_dfa.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,10 +16,6 @@ void print_postfix(regex r)
     printf("\n");
 }
 
-/*
- * Función orquestadora para la bandera -d
- * genera y muestra ambos autómatas.
- */
 void contrast_automata(const char *regex_str)
 {
     regex r = parse_regex(regex_str);
@@ -28,6 +25,29 @@ void contrast_automata(const char *regex_str)
     print_nfa_table(n);
     print_dfa_table(d);
 
+    free_dfa(&d);
+    free_nfa(&n);
+}
+
+void minimize_and_show(const char *regex_str)
+{
+    regex r = parse_regex(regex_str);
+    nfa n = regex_to_nfa(r);
+    dfa d = nfa_to_dfa(n);
+    dfa dmin = minimize_dfa(d);
+
+    print_dfa_table(d);
+    print_dfa_min(dmin);
+
+    printf("\nComparacion de estados: |Q| = %d, |Q'| = %d\n",
+           d.state_count, dmin.state_count);
+
+    if (d.state_count >= dmin.state_count)
+        printf("Comprobacion correcta: |Q| >= |Q'|\n");
+    else
+        printf("ERROR: el DFA minimizado tiene mas estados que el original\n");
+
+    free_dfa(&dmin);
     free_dfa(&d);
     free_nfa(&n);
 }
@@ -73,63 +93,44 @@ int main(int argc, char *argv[])
     char *output_file = NULL;
     int mode = 0;
 
-    while ((opt = getopt(argc, argv, "rtdo:")) != -1)
+    while ((opt = getopt(argc, argv, "rtdmo:")) != -1)
     {
         switch (opt)
         {
-            case 'r':
-                mode = 'r';
-                break;
-            case 't':
-                mode = 't';
-                break;
-            case 'd':
-                mode = 'd';
-                break;
+            case 'r': mode = 'r'; break;
+            case 't': mode = 't'; break;
+            case 'd': mode = 'd'; break;
+            case 'm': mode = 'm'; break;
             case 'o':
                 mode = 'o';
                 output_file = optarg;
                 break;
             default:
-                fprintf(stderr, "Usage: %s -r | -t | -d | -o <archivo.nfa>\n", argv[0]);
+                fprintf(stderr,
+                        "Usage: %s -r | -t | -d | -m | -o <archivo.nfa>\n",
+                        argv[0]);
                 return 1;
         }
     }
 
     if (mode == 0)
     {
-        fprintf(stderr, "Usage: %s -r | -t | -d | -o <archivo.nfa>\n", argv[0]);
+        fprintf(stderr,
+                "Usage: %s -r | -t | -d | -m | -o <archivo.nfa>\n",
+                argv[0]);
         return 1;
     }
 
     if (!fgets(regex_str, sizeof(regex_str), stdin))
-    {
         return 1;
-    }
+
     regex_str[strcspn(regex_str, "\r\n")] = '\0';
 
-    if (mode == 'r')
-    {
-        print_postfix(parse_regex(regex_str));
-        return 0;
-    }
-
-    if (mode == 't')
-    {
-        test_strings_stdin(regex_str);
-        return 0;
-    }
-
-    if (mode == 'd')
-    {
-        contrast_automata(regex_str);
-        return 0;
-    }
-
-    if (mode == 'o')
-    {
-        return serialize_nfa_from_regex(regex_str, output_file);
-    }
+    if (mode == 'r') { print_postfix(parse_regex(regex_str)); return 0; }
+    if (mode == 't') { test_strings_stdin(regex_str); return 0; }
+    if (mode == 'd') { contrast_automata(regex_str); return 0; }
+    if (mode == 'm') { minimize_and_show(regex_str); return 0; }
+    if (mode == 'o') { return serialize_nfa_from_regex(regex_str, output_file); }
 
     return 0;
 }
