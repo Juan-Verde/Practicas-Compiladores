@@ -1,0 +1,52 @@
+// Programa de prueba del lenguaje magico
+
+runa mana MANA_MAXIMO = 100;
+
+hechizo lanzarFuego(mana poder, aura distancia) {
+
+    orbe mana dano = poder * 5;
+    orbe aura energia = 25.75;
+    orbe profecia mensaje = "El hechizo ha sido lanzado";
+    orbe glifo simbolo = 'F';
+    orbe augurio disponible = favorable;
+
+    presagio (distancia > 50) {
+        dano = dano / 2;
+        revelar mensaje;
+    }
+    mal_augurio {
+        dano = dano * 2;
+    }
+
+    ritual (dano < MANA_MAXIMO) {
+        dano++;
+    }
+
+    conjuro (mana i = 0; i < 10; i++) {
+        presagio (i == 5) {
+            trascender;
+        }
+
+        presagio (i == 8) {
+            desterrar;
+        }
+    }
+
+    dano += 10;
+    dano -= 2;
+    dano *= 3;
+    dano /= 2;
+    dano %= 5;
+
+    otorgar dano;
+}
+
+/*
+   Este es un comentario
+   de varias lineas.
+*/
+
+orbe mana resultado = 8 << 2;
+orbe mana mascara = resultado & 15;
+
+invocar lanzarFuego(20, 75.5);
